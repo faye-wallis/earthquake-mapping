@@ -1,11 +1,11 @@
 ETHICAL CONSIDERATIONS: 
-We sourced our data from a kaggle dataset published by Elizabeth Degroot (https://www.kaggle.com/datasets/elizabethdgroot/volcanoevents02021/data) and used openstreetmap.org to help visualize our data. The use of this data is intended for educational purposes and we acknowledge that it may also contain data inaccuracies, outdated info, and biases due to reporting limitations.  
+We sourced our data from a kaggle dataset published by the National Oceanic and Atmospheric Administration and used openstreetmap.org to help visualize our data. The use of this data is intended for educational purposes and we acknowledge that it may also contain data inaccuracies, outdated info, and biases due to reporting limitations.  
  
 OVERVIEW: 
 The purpose of this project is to create an interactive map which can be used to explore volcano data from 0 A.D. to 2020 A.D. It can be filtered to show eruptions during any span of time within this interval, and its' multiple layers allow the user to explore the relationships between explosivity/mortality, and volcano type/tsunami creation.
 
 DATA SOURCES: 
-Volcano data: https://www.kaggle.com/datasets/elizabethdgroot/volcanoevents02021/data 
+Volcano data: https://www.ngdc.noaa.gov/hazel/view/hazards/volcano/event-search
 Map: https://www.openstreetmap.org 
 
 INSTRUCTIONS:
