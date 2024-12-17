@@ -1,6 +1,8 @@
+// Event listener that triggers when DOM content is loaded
 document.addEventListener('DOMContentLoaded', function () {
     let url = 'static/data/volcano_events.json';
 
+    // Add map
     let myMap = L.map("map", {
         center: [37.09, -95.71],
         zoom: 4
@@ -11,9 +13,11 @@ document.addEventListener('DOMContentLoaded', function () {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(myMap);
     // Add marker layers
+    let infoLayer = L.layerGroup().addTo(myMap);
     let eruptionLayer = L.layerGroup().addTo(myMap);
-    let tsunamiLayer = L.layerGroup()
+    let tsunamiLayer = L.layerGroup();
 
+    // Set marker size based on explosivity (VEI)
     function markerSize(vei) {
         // Ensure that VEI is valid before calculating marker size
         if (vei && vei > 0) {
@@ -22,6 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return 10000; // Default size if VEI is missing or invalid
     }
 
+    // Set color on eruptionLayer to be based on number of deaths
     function eruptionColor(deaths) {
         if (deaths === null || deaths <= 0) {
             return "#FFA07A";
@@ -34,6 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             "#FFA07A";
     }
 
+    // Set color on tsunamiLayer to be based on tsunami status
     function tsunamiColor(tsunami) {
         if (tsunami === 'No') {
             return "#800000";
@@ -41,6 +47,32 @@ document.addEventListener('DOMContentLoaded', function () {
         return 'blue'
     }
 
+    // Create legend that will be appropriate for each layer
+    function createLegend(layer) {
+        let legend = L.control({ position: 'bottomright' });
+    
+        legend.onAdd = function () {
+            let div = L.DomUtil.create('div', 'info legend');
+            if (layer === eruptionLayer) {
+                div.innerHTML += '<h4>Eruption Deaths</h4>';
+                div.innerHTML += '<i style="background:#800000"></i> > 1000 deaths<br>';
+                div.innerHTML += '<i style="background:#B22222"></i> 501 - 1000 deaths<br>';
+                div.innerHTML += '<i style="background:#FF4500"></i> 101 - 500 deaths<br>';
+                div.innerHTML += '<i style="background:#FF6347"></i> 51 - 100 deaths<br>';
+                div.innerHTML += '<i style="background:#FF7F50"></i> 11 - 50 deaths<br>';
+                div.innerHTML += '<i style="background:#FFA07A"></i> 0 - 10 deaths<br>';
+            } else if (layer === tsunamiLayer) {
+                div.innerHTML += '<h4>Tsunami Indicator</h4>';
+                div.innerHTML += '<i style="background:blue"></i> Tsunami Occurred<br>';
+                div.innerHTML += '<i style="background:#800000"></i> No Tsunami<br>';
+            }
+            return div;
+        };
+    
+        return legend;
+    }
+
+    // Read data using d3, and then use it to populate marker layers
     function addMarkers() {
         d3.json(url).then(function (data) {
             console.log(data);
@@ -76,6 +108,21 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     let coordinates = [latitude, longitude];
+
+                    let infoText = cowsay.say({
+                        text: `
+    Name: ${name}
+    Country: ${country}
+    Year: ${year}
+    Type: ${type}
+    Volcanic Explosivity Index: ${vei}
+    Tsunami: ${tsunami}
+    Total Deaths: ${deaths}
+                    `,
+                        e: "oO",
+                        T: "U "
+                    });
+
                     let eruptionText = cowsay.say({
                         text: `
     Name: ${name}
@@ -99,6 +146,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         e: "oO",
                         T: "U "
                     });
+
+                    L.circle(coordinates, {
+                        fillOpacity: 0.75,
+                        color: '#000',
+                        fillColor: "#800000",
+                        radius: markerSize(vei)
+                    }).bindPopup(`<pre>${infoText}</pre>`
+                    ).addTo(infoLayer);
 
                     L.circle(coordinates, {
                         fillOpacity: 0.75,
@@ -131,21 +186,36 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    document.getElementById('layerSelector').addEventListener('change', function () {
-        let selectedLayer = this.value;
-        // Remove all layers first
-        myMap.removeLayer(eruptionLayer);
-        myMap.removeLayer(tsunamiLayer);
+// Add legendControl as a variable that can be changed later
+let legendControl; 
 
-        // Add the selected layer
-        if (selectedLayer === 'Volcano Deaths') {
-            myMap.addLayer(eruptionLayer);
-            myMap.removeLayer(tsunamiLayer);
-        } else if (selectedLayer === 'Volcano Tsunamis') {
-            myMap.addLayer(tsunamiLayer);
-            myMap.removeLayer(eruptionLayer)
-        }
-    });
+// Event listener to update legend when new layer is selected
+document.getElementById('layerSelector').addEventListener('change', function () {
+    let selectedLayer = this.value;
+
+    // Clear old layers to prevent entanglement
+    myMap.removeLayer(infoLayer);
+    myMap.removeLayer(eruptionLayer);
+    myMap.removeLayer(tsunamiLayer);
+    
+    // Clear legend control to prevent redundancy
+    if (legendControl) {
+        myMap.removeControl(legendControl);
+    }
+
+    // Add the selected layer with appropriate legend
+    if (selectedLayer === 'Volcano Deaths') {
+        myMap.addLayer(eruptionLayer);
+        legendControl = createLegend(eruptionLayer);
+        myMap.addControl(legendControl);
+    } else if (selectedLayer === 'Volcano Tsunamis') {
+        myMap.addLayer(tsunamiLayer);
+        legendControl = createLegend(tsunamiLayer);
+        myMap.addControl(legendControl);
+    } else if (selectedLayer === 'Volcano Info') {
+        myMap.addLayer(infoLayer);
+    }
+});
 
     addMarkers()
 });
